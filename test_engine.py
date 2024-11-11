@@ -13,7 +13,7 @@ def test_search_engine_yacy():
 
 def test_search_engine_open():
     engine = SearchEngineOpenSearch()
-    query = "cat in the box"
+    query = "Jon snow"
     response = engine.search(query)
     file = open("test_open.json", "w")
     file.write(json.dumps(response, indent=4))

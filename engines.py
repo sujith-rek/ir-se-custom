@@ -14,7 +14,7 @@ YACY_BASE_URL = os.getenv("YACY_BASE_URL")
 YACY_ENDPOINT = os.getenv("YACY_ENDPOINT")
 
 
-class SearchEngine():
+class SearchEngine:
     def __init__(self, base_url, endpoint):
         self.base_url = base_url
         self.endpoint = endpoint
@@ -36,13 +36,9 @@ class SearchEngineYaCy(SearchEngine):
         return f"{self.base_url}{self.endpoint}?query={query}&former={query}&maximumRecords=500&resource=global"
 
     def search(self, query):
-        # query = query+"+%2Flanguage%2Fen"
         query = self.parse_query(query)
 
         response = requests.get(query)
-        file = open("yacy.json", "w", encoding="utf-8")
-        file.write(response.text)
-        file.close()
         response = json.loads(response.text)
 
         return response
@@ -60,7 +56,6 @@ class SearchEngineOpenSearch(SearchEngine):
 
     def search(self, query):
         query = self.parse_query(query)
-        print(query)
 
         collection = []
         for i in range(1, 11):
@@ -75,6 +70,7 @@ class SearchEngineOpenSearch(SearchEngine):
             try:
                 items = response["items"]
                 all_items.extend(items)
+                time.sleep(1)
             except KeyError:
                 pass
 
