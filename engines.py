@@ -59,7 +59,7 @@ class SearchEngineOpenSearch(SearchEngine):
         query = self.__parse_query(query)
 
         collection = []
-        for i in range(1, self.limit // 10 ):
+        for i in range(1, self.limit // 10):
             next_query = query + "&count=" + str(i * 10) + "&start=" + str(i * 10 + 1)
             collection.append(next_query)
 
