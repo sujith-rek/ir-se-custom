@@ -19,7 +19,7 @@ class SearchEngine:
         self.base_url = base_url
         self.endpoint = endpoint
 
-    def parse_query(self, query):
+    def __parse_query(self, query):
         pass
 
     def search(self, query):
@@ -31,12 +31,12 @@ class SearchEngineYaCy(SearchEngine):
     def __init__(self):
         super().__init__(YACY_BASE_URL, YACY_ENDPOINT)
 
-    def parse_query(self, query):
+    def __parse_query(self, query):
         query = query.replace(" ", "+")
         return f"{self.base_url}{self.endpoint}?query={query}&former={query}&maximumRecords=500&resource=global"
 
     def search(self, query):
-        query = self.parse_query(query)
+        query = self.__parse_query(query)
 
         response = requests.get(query)
         response = json.loads(response.text)
@@ -46,23 +46,25 @@ class SearchEngineYaCy(SearchEngine):
 
 class SearchEngineOpenSearch(SearchEngine):
 
-    def __init__(self):
+    def __init__(self, limit=100):
         super().__init__(OPEN_SEARCH_BASE_URL, OPEN_SEARCH_ENDPOINT)
         self.cx = OPEN_SEARCH_CX
         self.api_key = OPEN_SEARCH_API_KEY
+        self.limit = limit
 
-    def parse_query(self, query):
+    def __parse_query(self, query) -> str:
         return f"{self.base_url}{self.endpoint}?key={self.api_key}&cx={self.cx}&q={query}"
 
-    def search(self, query):
-        query = self.parse_query(query)
+    def search(self, query) -> tuple:
+        query = self.__parse_query(query)
 
         collection = []
-        for i in range(1, 11):
+        for i in range(1, self.limit // 10 ):
             next_query = query + "&count=" + str(i * 10) + "&start=" + str(i * 10 + 1)
             collection.append(next_query)
 
         all_items = []
+        links = []
 
         for query in collection:
             response = requests.get(query)
@@ -70,8 +72,9 @@ class SearchEngineOpenSearch(SearchEngine):
             try:
                 items = response["items"]
                 all_items.extend(items)
+                links.extend([item["link"] for item in items])
                 time.sleep(1)
             except KeyError:
                 pass
 
-        return all_items
+        return all_items, links

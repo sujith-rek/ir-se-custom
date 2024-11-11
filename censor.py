@@ -1,4 +1,4 @@
-def get_censor_list():
+def get_censor_list() -> list:
     return [
         "porn",
         "cumporn",

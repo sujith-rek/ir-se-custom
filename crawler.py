@@ -16,12 +16,18 @@ class Crawler:
     def __init__(self):
         pass
 
+    def extract_links(self, html, base_url) -> list:
+        pass
+
+    def normalize_html(self, html) -> str:
+        pass
+
     def crawl(self, url):
         pass
 
 
 class WebCrawler(Crawler):
-    def __init__(self, depth=1):
+    def __init__(self, depth=1) -> None:
         super().__init__()
         self.depth = depth
         self.visited = set()
@@ -39,9 +45,14 @@ class WebCrawler(Crawler):
         html = re.sub(SCRIPT_REGEX, EMPTY, html, flags=re.DOTALL)
         html = re.sub(STYLE_REGEX, EMPTY, html, flags=re.DOTALL)
         html = re.sub(TAGS_REGEX, EMPTY, html)
+
+        html = html.replace("\n", " ")
+        html = html.replace("\t", " ")
+        html = html.replace("\r", " ")
+
         return html
 
-    def is_censored(self, url):
+    def __is_censored(self, url) -> bool:
         """
         Check if the URL contains any words from the censor list
         :param url: URL to be checked
@@ -52,11 +63,12 @@ class WebCrawler(Crawler):
                 return True
         return False
 
-    def crawl(self, url):
-        self._crawl_recursive(url, 0)
+    def crawl(self, url) -> dict:
+        self._crawl_recursive(url, 0, is_main_url=True)
+        self._cleanup_link_map()  # Cleanup step to remove 'document': None entries
         return self.link_map
 
-    def _crawl_recursive(self, url, current_depth):
+    def _crawl_recursive(self, url, current_depth, is_main_url=False) -> None:
         if current_depth > self.depth or url in self.visited:
             return
 
@@ -65,7 +77,7 @@ class WebCrawler(Crawler):
             parent_domain = urlparse(url).netloc
 
             # Skip if the URL contains censored words
-            if self.is_censored(url):
+            if self.__is_censored(url):
                 print(f"Skipping censored link: {url}")
                 return
 
@@ -75,14 +87,13 @@ class WebCrawler(Crawler):
 
             print("Crawling:", url, "Depth:", current_depth)
 
-            # Normalize and extract content
-            document = self.normalize_html(html)
+            # Store normalized content only for the main URL
+            document = self.normalize_html(html) if is_main_url else None
             links = self.extract_links(html, url)
 
-            # Initialize the sub_links map for this parent URL
+            # Initialize the map entry for this URL with document only if it's the main URL
             self.link_map[url] = {
                 "document": document,
-                "links": links,
                 "sub_links": []
             }
 
@@ -101,14 +112,13 @@ class WebCrawler(Crawler):
         except requests.RequestException as e:
             print(f"Error crawling {url}: {e}")
 
-
-# Example usage:
-crawler = WebCrawler(depth=2)
-result = crawler.crawl(
-    "http://localhost:8090/yacysearch.html?query=cat&Enter=&auth=&verify=ifexist&contentdom=text&nav=location%2Chosts%2Cauthors%2Cnamespace%2Ctopics%2Cfiletype%2Cprotocol%2Clanguage&startRecord=0&indexof=off&meanCount=5&resource=global&prefermaskfilter=&maximumRecords=10&timezoneOffset=-330"
-)
-print("\nCrawling result:")
-for parent, data in result.items():
-    print(f"{parent}")
-    for child in data["sub_links"]:
-        print("  |---", child)
+    def _cleanup_link_map(self):
+        """
+        Remove 'document' keys with None values from link_map
+        """
+        for url, data in self.link_map.items():
+            try:
+                if data["document"] is None:
+                    del data["document"]
+            except KeyError:
+                pass
