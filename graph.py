@@ -5,14 +5,14 @@ from urllib.parse import urlparse
 
 
 class DomainGraph:
-    def __init__(self):
+    def __init__(self) -> None:
         self.G = nx.DiGraph()
 
-    def __extract_domain(self, url):
+    def __extract_domain(self, url: str) -> str:
         """Helper function to extract the domain from a URL."""
         return urlparse(url).netloc
 
-    def build_graph(self, data):
+    def build_graph(self, data: dict) -> None:
         """Build the directed graph from the provided data."""
         gr = {}
 
@@ -33,7 +33,7 @@ class DomainGraph:
             for child_domain in child_domains:
                 self.G.add_edge(parent_domain, child_domain)
 
-    def draw_graph(self):
+    def draw_graph(self) -> None:
         """Draw the graph using matplotlib."""
         plt.figure(figsize=(15, 15))
 
@@ -50,14 +50,14 @@ class DomainGraph:
         plt.axis("off")
         plt.show()
 
-    def draw_from_file(self, file_name):
+    def draw_from_file(self, file_name: str) -> None:
         """Load JSON data from a file and draw the graph."""
         with open(file_name, "r") as file:
             data = json.load(file)[0]  # Assuming the first element in the list is the relevant dictionary
         self.build_graph(data)
         self.draw_graph()
 
-    def draw_from_json(self, json_data):
+    def draw_from_json(self, json_data: dict) -> None:
         """Draw the graph from directly provided JSON data."""
         self.build_graph(json_data[0])  # Assuming the first element in the list is the relevant dictionary
         self.draw_graph()

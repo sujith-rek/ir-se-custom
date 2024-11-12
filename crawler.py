@@ -17,32 +17,32 @@ class Crawler:
     def __init__(self):
         pass
 
-    def extract_links(self, html, base_url) -> list:
+    def extract_links(self, html: str, base_url: str) -> list:
         pass
 
-    def normalize_html(self, html) -> str:
+    def normalize_html(self, html: str) -> str:
         pass
 
-    def crawl(self, urls):
+    def crawl(self, urls: list) -> dict:
         pass
 
 
 class WebCrawler(Crawler):
-    def __init__(self, depth=1):
+    def __init__(self, depth: int = 1) -> None:
         super().__init__()
         self.depth = depth
         self.visited = set()
         self.link_map = {}
         self.robots_cache = {}
 
-    def extract_links(self, html, base_url) -> list:
+    def extract_links(self, html: str, base_url: str) -> list:
         links = []
         for link in re.findall(LINKS_REGEX, html):
             absolute_link = urljoin(base_url, link)
             links.append(absolute_link)
         return links
 
-    def normalize_html(self, html) -> str:
+    def normalize_html(self, html: str) -> str:
         html = re.sub(SCRIPT_REGEX, EMPTY, html, flags=re.DOTALL)
         html = re.sub(STYLE_REGEX, EMPTY, html, flags=re.DOTALL)
         html = re.sub(TAGS_REGEX, EMPTY, html)
@@ -53,17 +53,17 @@ class WebCrawler(Crawler):
 
         return html
 
-    def __is_censored(self, url):
+    def __is_censored(self, url: str) -> bool:
         for censored_word in CENSOR_LIST:
             if censored_word.lower() in url.lower():
                 return True
         return False
 
-    def __is_skip_type(self, url):
+    def __is_skip_type(self, url: str) -> bool:
         """Check if the URL ends with a file type that should be skipped."""
         return any(url.lower().endswith(ext) for ext in SKIP_LIST)
 
-    def __fetch_robots_txt(self, domain):
+    def __fetch_robots_txt(self, domain: str) -> set:
         """
         Fetch and parse robots.txt rules for the given domain.
         :param domain: The domain to fetch robots.txt for
@@ -87,7 +87,7 @@ class WebCrawler(Crawler):
 
         return disallowed_paths
 
-    def __is_allowed_by_robots(self, url):
+    def __is_allowed_by_robots(self, url: str) -> bool:
         """
         Check if the URL is allowed by robots.txt rules.
         :param url: URL to check against robots.txt
@@ -107,7 +107,7 @@ class WebCrawler(Crawler):
                 return False
         return True
 
-    def crawl(self, urls) -> dict:
+    def crawl(self, urls: list) -> dict:
         for url in urls:
             if url not in self.visited:
                 self._crawl_recursive(url, 0, is_main_url=True)
@@ -115,7 +115,7 @@ class WebCrawler(Crawler):
         self._cleanup_link_map()
         return self.link_map
 
-    def _crawl_recursive(self, url, current_depth, is_main_url=False) -> None:
+    def _crawl_recursive(self, url: str, current_depth: int, is_main_url: bool = False) -> None:
         if current_depth > self.depth or url in self.visited:
             return
         print("Crawling:", url, "Depth:", current_depth)
@@ -159,7 +159,7 @@ class WebCrawler(Crawler):
         except requests.RequestException as e:
             print(f"Error crawling {url}: {e}")
 
-    def _cleanup_link_map(self):
+    def _cleanup_link_map(self) -> None:
         for url, data in list(self.link_map.items()):
             try:
                 if data["document"] is None:
