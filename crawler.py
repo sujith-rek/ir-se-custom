@@ -9,6 +9,8 @@ STYLE_REGEX = r'<style.*?</style>'
 TAGS_REGEX = r'<.*?>'
 EMPTY = ''
 
+TIMEOUT = 10  # seconds
+
 CENSOR_LIST = get_censor_list()
 SKIP_LIST = get_skip_types()
 
@@ -73,7 +75,7 @@ class WebCrawler(Crawler):
         disallowed_paths = set()
 
         try:
-            response = requests.get(robots_url)
+            response = requests.get(robots_url, timeout=TIMEOUT)
             if response.status_code == 200:
                 for line in response.text.splitlines():
                     if line.strip().lower().startswith("disallow:"):
@@ -101,10 +103,14 @@ class WebCrawler(Crawler):
         disallowed_paths = self.robots_cache[domain]
         path = urlparse(url).path
 
+        if disallowed_paths is None:
+            return True
+
         for disallowed in disallowed_paths:
             if path.startswith(disallowed):
                 print(f"Skipping URL due to robots.txt disallow: {url}")
                 return False
+
         return True
 
     def crawl(self, urls: list) -> dict:
@@ -131,7 +137,7 @@ class WebCrawler(Crawler):
                 print(f"Skipping file link (skip type): {url}")
                 return
 
-            response = requests.get(url)
+            response = requests.get(url, timeout=TIMEOUT)
             html = response.text
             self.visited.add(url)
 
@@ -156,6 +162,8 @@ class WebCrawler(Crawler):
                 else:
                     print(f"Skipping link (same domain): {link}")
 
+        except requests.Timeout:
+            print(f"Timeout reached for URL: {url}. Moving on.")
         except requests.RequestException as e:
             print(f"Error crawling {url}: {e}")
 
