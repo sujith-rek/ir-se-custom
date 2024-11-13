@@ -53,14 +53,15 @@ class SearchEngineOpenSearch(SearchEngine):
         self.limit = limit
 
     def __parse_query(self, query: str) -> str:
+        query = query.replace(" ", "+")
         return f"{self.base_url}{self.endpoint}?key={self.api_key}&cx={self.cx}&q={query}"
 
     def search(self, query: str) -> tuple:
         query = self.__parse_query(query)
 
         collection = []
-        for i in range(1, self.limit // 10):
-            next_query = query + "&count=" + str(i * 10) + "&start=" + str(i * 10 + 1)
+        for i in range(0, self.limit // 10):
+            next_query = query + "&count=10" + "&start=" + str(i * 10 + 1)
             collection.append(next_query)
 
         all_items = []

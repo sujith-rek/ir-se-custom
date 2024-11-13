@@ -1,7 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import json
-from urllib.parse import urlparse
+import tldextract
 
 
 class DomainGraph:
@@ -10,7 +10,8 @@ class DomainGraph:
 
     def __extract_domain(self, url: str) -> str:
         """Helper function to extract the domain from a URL."""
-        return urlparse(url).netloc
+        extracted = tldextract.extract(url)
+        return f"{extracted.domain}.{extracted.suffix}"
 
     def build_graph(self, data: dict) -> None:
         """Build the directed graph from the provided data."""
