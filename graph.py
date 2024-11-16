@@ -2,9 +2,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import json
 import tldextract
+import numpy as np
 
 
 class DomainGraph:
+
     def __init__(self) -> None:
         self.G = nx.DiGraph()
 
@@ -51,6 +53,10 @@ class DomainGraph:
         plt.axis("off")
         plt.show()
 
+    def return_graph_matrix(self) -> np.ndarray:
+        """Return the adjacency matrix of the graph."""
+        return np.array(nx.adjacency_matrix(self.G).todense().tolist())
+
     def draw_from_file(self, file_name: str) -> None:
         """Load JSON data from a file and draw the graph."""
         with open(file_name, "r") as file:
@@ -62,3 +68,56 @@ class DomainGraph:
         """Draw the graph from directly provided JSON data."""
         self.build_graph(json_data[0])  # Assuming the first element in the list is the relevant dictionary
         self.draw_graph()
+
+
+class PageRank:
+
+    def __init__(self, graph_matrix: np.ndarray, epsilon: float = 0.85, max_iterations: int = 100,
+                 tol: float = 1e-6) -> None:
+        self.graph_matrix = np.array(graph_matrix)
+        self.epsilon = epsilon
+        self.max_iterations = max_iterations
+        self.tol = tol
+        self.page_rank_scores = None
+
+    def normalize_matrix(self) -> np.ndarray:
+        num_nodes = self.graph_matrix.shape[0]
+
+        # Normalize columns to sum to 1
+        column_sums = self.graph_matrix.sum(axis=0)
+        column_sums[column_sums == 0] = 1  # Avoid division by zero for dangling nodes
+        normalized_matrix = self.graph_matrix / column_sums
+
+        # Apply damping factor and teleportation
+        teleportation_matrix = np.full_like(normalized_matrix, 1 / num_nodes)
+        return (1 - self.epsilon) * normalized_matrix + self.epsilon * teleportation_matrix
+
+    def calculate_pagerank(self) -> np.ndarray:
+        num_nodes = len(self.graph_matrix)
+        rank_scores = np.full(num_nodes, 1 / num_nodes)  # Initial uniform rank scores
+        matrix = self.normalize_matrix()
+
+        for _ in range(self.max_iterations):
+            new_rank_scores = np.dot(matrix, rank_scores)
+            if np.allclose(new_rank_scores, rank_scores, atol=self.tol):
+                break
+            rank_scores = new_rank_scores
+
+        return rank_scores
+
+    def get_pagerank(self) -> np.ndarray:
+        self.page_rank_scores = self.calculate_pagerank()
+        return self.page_rank_scores
+
+    def get_max_pagerank(self) -> str:
+        max_node = np.argmax(self.page_rank_scores)
+        max_score = np.max(self.page_rank_scores)
+        return f"Node {max_node} has the highest PageRank score of {max_score:.6f}"
+
+
+dg = DomainGraph()
+dg.draw_from_file("data.json")
+pr = PageRank(dg.return_graph_matrix())
+print(pr.normalize_matrix())
+print(pr.get_pagerank())
+print(pr.get_max_pagerank())

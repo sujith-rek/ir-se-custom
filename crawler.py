@@ -2,13 +2,9 @@ import requests
 import re
 from urllib.parse import urljoin, urlparse
 from censor import get_censor_list, get_skip_types
+from bs4 import BeautifulSoup
 
 LINKS_REGEX = r'<a\s+(?:[^>]*?\s+)?href=["\'](https?://[^"\']+)["\']'
-SCRIPT_REGEX = r'<script.*?</script>'
-STYLE_REGEX = r'<style.*?</style>'
-TAGS_REGEX = r'<.*?>'
-EMPTY = ''
-
 TIMEOUT = 10  # seconds
 
 CENSOR_LIST = get_censor_list()
@@ -45,10 +41,8 @@ class WebCrawler(Crawler):
         return links
 
     def normalize_html(self, html: str) -> str:
-        html = re.sub(SCRIPT_REGEX, EMPTY, html, flags=re.DOTALL)
-        html = re.sub(STYLE_REGEX, EMPTY, html, flags=re.DOTALL)
-        html = re.sub(TAGS_REGEX, EMPTY, html)
 
+        html = BeautifulSoup(html, "html.parser").get_text()
         html = html.replace("\n", " ")
         html = html.replace("\t", " ")
         html = html.replace("\r", " ")
