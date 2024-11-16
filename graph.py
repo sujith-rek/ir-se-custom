@@ -36,6 +36,10 @@ class DomainGraph:
             for child_domain in child_domains:
                 self.G.add_edge(parent_domain, child_domain)
 
+    def get_node_labels(self) -> list:
+        """Return the list of node labels (domains) in order."""
+        return list(self.G.nodes())
+
     def draw_graph(self) -> None:
         """Draw the graph using matplotlib."""
         plt.figure(figsize=(15, 15))
@@ -72,9 +76,10 @@ class DomainGraph:
 
 class PageRank:
 
-    def __init__(self, graph_matrix: np.ndarray, epsilon: float = 0.85, max_iterations: int = 100,
+    def __init__(self, graph_matrix: np.ndarray, node_labels: list, epsilon: float = 0.85, max_iterations: int = 100,
                  tol: float = 1e-6) -> None:
         self.graph_matrix = np.array(graph_matrix)
+        self.node_labels = node_labels  # List of domain names
         self.epsilon = epsilon
         self.max_iterations = max_iterations
         self.tol = tol
@@ -105,19 +110,23 @@ class PageRank:
 
         return rank_scores
 
-    def get_pagerank(self) -> np.ndarray:
+    def get_pagerank(self) -> dict:
         self.page_rank_scores = self.calculate_pagerank()
-        return self.page_rank_scores
+        # Create a dictionary mapping nodes to their scores
+        return {self.node_labels[i]: self.page_rank_scores[i] for i in range(len(self.node_labels))}
 
     def get_max_pagerank(self) -> str:
-        max_node = np.argmax(self.page_rank_scores)
+        max_index = np.argmax(self.page_rank_scores)
         max_score = np.max(self.page_rank_scores)
-        return f"Node {max_node} has the highest PageRank score of {max_score:.6f}"
+        max_node = self.node_labels[max_index]
+        return f"Node '{max_node}' has the highest PageRank score of {max_score:.6f}"
 
+    def display_pagerank(self) -> list:
+        pagerank_scores = self.get_pagerank()
+        sorted_scores = sorted(pagerank_scores.items(), key=lambda x: x[1], reverse=True)
 
-dg = DomainGraph()
-dg.draw_from_file("data.json")
-pr = PageRank(dg.return_graph_matrix())
-print(pr.normalize_matrix())
-print(pr.get_pagerank())
-print(pr.get_max_pagerank())
+        print("\nPageRank Scores:")
+        for node, score in sorted_scores:
+            print(f"Node: {node}, Score: {score:.6f}")
+
+        return sorted_scores
